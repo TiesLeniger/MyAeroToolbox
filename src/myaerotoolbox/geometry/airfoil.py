@@ -65,20 +65,3 @@ class Naca4Digit(Airfoil):
         if opt_return:
             return camberline
         
-    def calculate_airfoil_contour(self, numpoints: int, spacing: str = "cosine", close_TE: bool = False) -> np.ndarray:
-        
-        airfoil_contour = np.zeros((numpoints, 3))
-        if spacing == "constant":
-            top = np.linspace(1.0, 0.0, num = np.ceil(numpoints/2))
-            bot = np.linspace(0.0, 1.0, num = np.floor(numpoints/2))
-            airfoil_contour[:, 0] = np.concatenate((top, bot[1:]))
-        elif spacing == "cosine":
-            psi = np.linspace(0.0, 2*np.pi, num = numpoints)
-            airfoil_contour[:, 0] = (1/2)*(1 + np.cos(psi))
-        else:
-            logger.error(f"Specified spacing method, {spacing}, is not implemented. Choose 'constant' or 'cosine'")
-            raise ValueError(f"Specified spacing method, {spacing}, is not implemented. Choose 'constant' or 'cosine'")
-        
-        
-
-
