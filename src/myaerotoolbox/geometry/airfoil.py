@@ -55,10 +55,10 @@ class Naca4Digit(Airfoil):
             raise ValueError(f"Specified spacing method, {spacing}, is not implemented. Choose 'constant' or 'cosine'")
         
         if abs(self.p) > 1e-9:
-            before_max_camber = camberline[:, 0] < self.p
+            before_max_camber = camberline[:, 0] <= self.p
             after_max_camber = ~before_max_camber
-            camberline[before_max_camber, 2] = (self.m/(self.p**2))*(2*self.p*camberline[before_max_camber, 0] - camberline[before_max_camber, 0]**2)
-            camberline[after_max_camber, 2] = (self.m/(1-self.p**2))*(1 - 2*self.p + 2*self.p*camberline[after_max_camber, 0] - camberline[after_max_camber, 0]**2)
+            camberline[before_max_camber, 2] = (self.m/self.p**2)*(2*self.p*camberline[before_max_camber, 0] - camberline[before_max_camber, 0]**2)
+            camberline[after_max_camber, 2] = (self.m/(1-self.p)**2)*(1 - 2*self.p + 2*self.p*camberline[after_max_camber, 0] - camberline[after_max_camber, 0]**2)
         
         camberline *= self.chord
         self.camberline = camberline
@@ -76,23 +76,23 @@ class Naca4Digit(Airfoil):
             airfoil_contour[:, 0] = np.concatenate((top, bot[1:]))
             LEindex = np.where(airfoil_contour[:, 0] == 0.0)[0][0]
         elif spacing == "cosine":
-            psi = np.linspace(0.0, np.pi, num = numpoints)
-            airfoil_contour[:, 0] = 1/2*(1-np.cos(psi))
-            LEindex = np.where(airfoil_contour[:, 0] == 0.0)[0][0]
+            psi = np.linspace(0.0, 2*np.pi, num = numpoints)
+            airfoil_contour[:, 0] = 1/2*(1+np.cos(psi))
+            LEindex = np.argmin(airfoil_contour[:, 0])
         else:  
             logger.error(f"Specified spacing method, {spacing}, is not implemented. Choose 'constant' or 'cosine'")
             raise ValueError(f"Specified spacing method, {spacing}, is not implemented. Choose 'constant' or 'cosine'")
         
         if abs(self.p) > 1e-9:
-            before_max_camber = airfoil_contour[:, 0] < self.p
+            before_max_camber = airfoil_contour[:, 0] <= self.p
             after_max_camber = ~before_max_camber
-            airfoil_contour[before_max_camber, 2] = (self.m/(self.p**2))*(2*self.p*airfoil_contour[before_max_camber, 0] - airfoil_contour[before_max_camber, 0]**2)
-            airfoil_contour[after_max_camber, 2] = (self.m/(1-self.p**2))*(1 - 2*self.p + 2*self.p*airfoil_contour[after_max_camber, 0] - airfoil_contour[after_max_camber, 0]**2)
+            airfoil_contour[before_max_camber, 2] = (self.m/self.p**2)*(2*self.p*airfoil_contour[before_max_camber, 0] - airfoil_contour[before_max_camber, 0]**2)
+            airfoil_contour[after_max_camber, 2] = (self.m/(1-self.p)**2)*(1 - 2*self.p + 2*self.p*airfoil_contour[after_max_camber, 0] - airfoil_contour[after_max_camber, 0]**2)
         
         # Gradient of the camberline
         gradient = np.zeros((numpoints))
-        gradient[before_max_camber] = (2*self.m/(self.p**2))*(self.p - airfoil_contour[before_max_camber, 0])
-        gradient[after_max_camber] = (2*self.m/(1-self.p**2))*(self.p - airfoil_contour[after_max_camber, 0])
+        gradient[before_max_camber] = (2*self.m/self.p**2)*(self.p - airfoil_contour[before_max_camber, 0])
+        gradient[after_max_camber] = (2*self.m/(1-self.p)**2)*(self.p - airfoil_contour[after_max_camber, 0])
 
         # Polynomial coefficients for thickness distribution
         a = [0.2969, -0.1260, -0.3516,  0.2843, -0.1015]
@@ -130,9 +130,10 @@ class Naca4Digit(Airfoil):
         plt.plot(self.camberline[:, 0], self.camberline[:, 2], color = "blue")
         plt.xlabel("x [m]")
         plt.ylabel("y [m]")
-        name = str(self.m*100) + str(self.p*10) + str(self.t*100)
+        name = str(int(self.m*100)) + str(int(self.p*10)) + str(int(self.t*100))
         plt.title(f"Camberline - NACA {name}")
         plt.grid()
+        plt.axis("equal")
         path_to_output = Path.cwd() / "output" / "plots" / f"camberline-NACA-{name}.png"
         plt.savefig(path_to_output)
         plt.close()
@@ -146,9 +147,14 @@ class Naca4Digit(Airfoil):
         plt.plot(self.airfoil_contour[:, 0], self.airfoil_contour[:, 2], color = "blue")
         plt.xlabel("x [m]")
         plt.ylabel("y [m]")
-        name = str(self.m*100) + str(self.p*10) + str(self.t*100)
+        name = str(int(self.m*100)) + str(int(self.p*10)) + str(int(self.t*100))
         plt.title(f"Airfoil contour - NACA {name}")
         plt.grid()
+        plt.axis("equal")
         path_to_output = Path.cwd() / "output" / "plots" / f"airfoil-NACA-{name}.png"
         plt.savefig(path_to_output)
         plt.close()
+
+airfoil = Naca4Digit("2314", 1.0)
+airfoil.calculate_airfoil_contour(90, spacing="cosine", close_TE=True)
+airfoil.plot_airfoil()
