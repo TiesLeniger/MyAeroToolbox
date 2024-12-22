@@ -17,7 +17,11 @@ def v_ind_by_semi_inf_vortex(P: np.ndarray, A: np.ndarray, r0: np.ndarray, gamma
         Coordinates of the starting point of the vortex filament, last dimension must have 3 components.
         If A has a higher dimension than 2, it will be reshaped to A.reshape(-1, 3)
     r0 : np.ndarray
-        Direction vector of the vortex filament, must have 3 components.
+        Direction vector of the vortex filaments, last dimension must have 3 components.
+    gamma : int, float, np.ndarray
+        The circulation values of the vortex filaments. If gamma is a scalar, the same circulation is applied to all vortex filaments.
+    cross_tolerance : float, optional
+        Tolerance to apply to the cross product between r0 and AP to avoid singularities, by default 1e-6
     """
     if P.shape[-1] != 3 or A.shape[-1] != 3 or r0.shape[-1] != 3:
         logger.error("Input vectors must have 3 components")
