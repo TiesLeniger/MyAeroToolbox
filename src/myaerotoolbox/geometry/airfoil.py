@@ -155,6 +155,3 @@ class Naca4Digit(Airfoil):
         plt.savefig(path_to_output)
         plt.close()
 
-airfoil = Naca4Digit("2314", 1.0)
-airfoil.calculate_airfoil_contour(90, spacing="cosine", close_TE=True)
-airfoil.plot_airfoil()
