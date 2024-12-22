@@ -272,4 +272,3 @@ def v_ind_by_vortex_ring(P: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndar
     else:
         v_ind = vAB + vBC + vCD + vDA
         return v_ind
-
