@@ -96,14 +96,18 @@ def rotate_points_about_arbitrary_axis(axis_start: np.ndarray, axis_end: np.ndar
     else:
         k = k / norm_k                                                                      # Normalize the axis vector
 
-    R1 = np.eye(3, 3)                                                                           # 3 by 3 Identity matrix
-    R2 = k[:, np.newaxis] * k.transpose()[np.newaxis, :]                                        # Outer product of the axis vector
-    R3 = np.array([[0.0, -k[2], k[1]],                                                          # Skew symmetric matrix of k
+    R1 = np.eye(3, 3)                                                                       # 3 by 3 Identity matrix
+    R2 = k[:, np.newaxis] * k.transpose()[np.newaxis, :]                                    # Outer product of the axis vector
+    R3 = np.array([[0.0, -k[2], k[1]],                                                      # Skew symmetric matrix of k
                    [k[2], 0.0, -k[0]],
                    [-k[1], k[0], 0.0]])
     
-    rotation_matrix = cos*R1 + (1-cos)*R2 + sin*R3                                              # Construct the rotation matrix with R1, R2 and R3
+    rotation_matrix = cos*R1 + (1-cos)*R2 + sin*R3                                          # Construct the rotation matrix with R1, R2 and R3
+
+    rotated_points = points - axis_start                                                    # Subtract axis_start to move the points to the origin, otherwise the axis of rotation would be at a different location
    
-    rotated_points = apply_rotation(rotation_matrix, points)
+    rotated_points = apply_rotation(rotation_matrix, rotated_points)                        # Apply the rotation
+
+    rotated_points = rotated_points + axis_start                                            # Add the axis start back
 
     return rotated_points
