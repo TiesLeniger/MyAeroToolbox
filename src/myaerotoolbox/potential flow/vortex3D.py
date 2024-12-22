@@ -175,3 +175,101 @@ def v_ind_by_finite_vortex(P: np.ndarray, A: np.ndarray, B: np.ndarray, gamma: U
         v_ind =  np.zeros((P.shape[0], A.shape[1], 3))
     
     return v_ind
+
+def v_ind_by_horseshoe(P: np.ndarray, A: np.ndarray, B: np.ndarray, r0: np.ndarray, gamma: Union[int, float, np.ndarray], tolerance: float = 1e-6, return_wash: bool = False) -> np.ndarray:
+    """
+    Compute the induced velocity at observation points due to a horseshoe vortex.
+
+    A horseshoe vortex consists of a finite vortex segment connected to two semi-infinite vortex filaments
+    extending from its endpoints in the direction of vector `r0`. This function calculates the induced velocity
+    at a set of observation points (`P`) using contributions from the finite vortex segment and the two 
+    semi-infinite vortex filaments.
+
+    Parameters
+    ----------
+    P : np.ndarray
+        Array of observation points. Last dimension must be 3
+    A : np.ndarray
+        Array of start points of the finite vortex segment. Last dimension must be 3
+    B : np.ndarray
+        Array of end points of the finite vortex segment. Last dimension must be 3
+    r0 : np.ndarray
+        Direction vector of the semi-infinite trailing vortices. Shape (3,)
+    gamma : Union[int, float, np.ndarray]
+        Circulation strength of the vortex. If scalar, the same value is applied to all filaments. If an array,
+        it must have shape (M,) matching the number of vortex segments.
+    tolerance : float, optional
+        Tolerance for determining if observation points are on the vortex line or core. Defaults to `1e-6`.
+    return_wash : bool, optional
+        If `True`, returns both the total induced velocity and the velocity due to the semi-infinite filaments 
+        (wash). Defaults to `False`.
+
+    Returns
+    -------
+    np.ndarray
+        If `return_wash` is `False`, returns the induced velocity at N control points due to M horseshoe vortices 
+        as a (N, M, 3) array. To find the total induced velocity in a point in N, sum over the first axis
+        if `return_wash` is `True`. returns the total induced velocity as mentioned before as well as the induced
+        downwash (important for drag calculations)
+
+    Raises
+    ------
+    ValueError
+        If the shapes of `A` and `B` do not match, or if `gamma` is an array and does not match the number of filaments.
+    TypeError
+        If `gamma` is not specified as a scalar or a numpy array.
+
+    Notes
+    -----
+    - The induced velocity is computed as the sum of contributions from:
+      1. A finite vortex filament (`vAB`).
+      2. Two semi-infinite vortex filaments extending from `A` and `B` to the reference point `r0` (`vA` and `vB`).
+    - The Biot-Savart law is used for velocity computation.
+    """
+    if A.shape != B.shape:
+        logger.error("The shape of array A does not match the shape of array B")
+        raise ValueError("Different amount of start and endpoints entered")
+    elif isinstance(gamma, np.ndarray) and gamma.flatten().shape[0] != A.reshape(-1, 3).shape[0]:
+        logger.error("'gamma' has an inconsistent shape w.r.t. 'A' and 'B'")
+        raise ValueError("'gamma' has an inconsistent shape w.r.t. 'A' and 'B'")
+    elif not isinstance(gamma, (int, float, np.ndarray)):
+        logger.error("Gamma must be specified as a scalar or as a numpy array")
+        raise TypeError("Gamma must be specified as a scalar or as a numpy array")
+    
+    vA = v_ind_by_semi_inf_vortex(P, A, r0, gamma = -1*gamma, cross_tolerance = tolerance)
+    vAB = v_ind_by_finite_vortex(P, A, B, gamma = gamma, cross_tolerance = tolerance)
+    vB = v_ind_by_semi_inf_vortex(P, A, r0, gamma = gamma, cross_tolerance = tolerance)
+
+    if return_wash:
+        w_ind = vA + vB
+        v_ind = w_ind + vAB
+        return v_ind, w_ind
+    else:
+        v_ind = vA + vAB + vB
+        return v_ind
+
+def v_ind_by_vortex_ring(P: np.ndarray, A: np.ndarray, B: np.ndarray, C: np.ndarray, D: np.ndarray, gamma: np.ndarray, tolerance: float = 1e-6, return_wash: bool = False) -> np.ndarray:
+
+    if A.shape != B.shape or B.shape != C.shape or C.shape != D.shape:
+        logger.error("The dimensions of the input arrays for the vortex ring corner points are not consistent")
+        raise ValueError("The dimensions of the input arrays for the vortex ring corner points are not consistent")
+    elif isinstance(gamma, np.ndarray) and gamma.flatten().shape[0] != A.reshape(-1, 3).shape[0]:
+        logger.error("'gamma' has an inconsistent shape w.r.t. 'A', 'B', 'C' and 'D'")
+        raise ValueError("'gamma' has an inconsistent shape w.r.t. 'A', 'B', 'C' and 'D'")
+    elif not isinstance(gamma, (int, float, np.ndarray)):
+        logger.error("Gamma must be specified as a scalar or as a numpy array")
+        raise TypeError("Gamma must be specified as a scalar or as a numpy array")
+    
+    vAB = v_ind_by_finite_vortex(P, A, B, gamma = gamma, cross_tolerance = tolerance)
+    vBC = v_ind_by_finite_vortex(P, B, C, gamma = gamma, cross_tolerance = tolerance)
+    vCD = v_ind_by_finite_vortex(P, C, D, gamma = gamma, cross_tolerance = tolerance)
+    vDA = v_ind_by_finite_vortex(P, D, A, gamma = gamma, cross_tolerance = tolerance)
+
+    if return_wash:
+        w_ind = vAB + vCD
+        v_ind = w_ind + vBC + vDA
+        return v_ind, w_ind
+    else:
+        v_ind = vAB + vBC + vCD + vDA
+        return v_ind
+
