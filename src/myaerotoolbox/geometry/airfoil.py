@@ -29,8 +29,7 @@ class Airfoil:
         """
         Plot the airfoil contour
         """
-        raise NotImplementedError("Subclasses must impolement the 'plot_airfoil()' method")
-    
+        raise NotImplementedError("Subclasses must impolement the 'plot_airfoil()' method")   
 class Naca4Digit(Airfoil):
 
     def __init__(self, NACAdigits: str, chord: float):
