@@ -64,6 +64,20 @@ class WingSection:
     def apply_twist(self, tip: np.ndarray):
         """
         Function that twists the tip with `self.twist` before interpolation between root and tip
+
+        Parameters:
+        tip : np.ndarray
+            (points_chord, 3) shaped array (3 for x, y and z) that captures the camberline of the tip of the section
         """
+        LEx = tip[0, 0]
+        tip[:, 0] = tip[:, 0] - LEx - self.twistloc * self.ctip           # Translate the tip so that the twistloc is on the y axis
+        tip = rotate_points_about_y_axis(tip, self.twist, unit = "rad")         # Apply the rotation
+        tip[:, 0] = tip[:, 0] + LEx + self.twistloc * self.ctip
+
+        return tip
+    
+
+
+
 
 
